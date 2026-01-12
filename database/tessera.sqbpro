@@ -9,4 +9,4 @@ ORDER BY SUM(t.price) desc;
 
 
 Select * 
-from users</sql><current_tab id="0"/></tab_sql></sqlb_project>
+from tickets</sql><current_tab id="0"/></tab_sql></sqlb_project>

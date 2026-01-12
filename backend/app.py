@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, make_response, request # Importing the Flask library and some helper functions
+from flask_cors import CORS # Library to handle Cross-Origin Resource Sharing (CORS)
 import sqlite3 # Library for talking to our database
 from datetime import datetime # We'll be working with dates
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -6,6 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # Flask application instance
 # This file defines a small REST API for users, events and ticketing backed by SQLite.
 app = Flask(__name__)
+CORS(app)
 
 # This function returns a connection to the database which can be used to send SQL commands to the database
 def get_db_connection():
@@ -219,7 +221,7 @@ def create_event():
 
 @app.route('/emails', methods=['GET'])
 def get_all_emails():
-    # Return all user emails. WARNING: exposing emails is a privacy risk; keep access restricted.
+    # Return all user emails. 
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -231,49 +233,43 @@ def get_all_emails():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
-@app.route('/tickets', methods=['POST'])
-def award_tickets():
-    # Award one or more tickets to a user for an event. Request JSON:
-    # { "user_id": 1, "event_id": 2, "quantity": 3 }
-    user_id = request.json.get('user_id')
-    event_id = request.json.get('event_id')
-    quantity = int(request.json.get('quantity', 1))
-
-    if not user_id or not event_id:
-        return jsonify({'error': 'user_id and event_id are required'}), 400
-
-    if quantity < 1:
-        return jsonify({'error': 'quantity must be >= 1'}), 400
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    # Verify user exists
-    cursor.execute('SELECT user_id FROM Users WHERE user_id = ?', (user_id,))
-    if not cursor.fetchone():
-        conn.close()
-        return jsonify({'error': 'User not found'}), 404
-
-    # Verify event exists
-    cursor.execute('SELECT event_id FROM Events WHERE event_id = ?', (event_id,))
-    if not cursor.fetchone():
-        conn.close()
-        return jsonify({'error': 'Event not found'}), 404
-
-    created_ticket_ids = []
+@app.route('/events', methods=['GET'])
+def get_all_events():
+    # Return all events
     try:
-        for _ in range(quantity):
-            now = datetime.utcnow().isoformat()
-            cursor.execute('INSERT INTO Tickets (user_id, event_id, created_at) VALUES (?, ?, ?)',
-                           (user_id, event_id, now))
-            created_ticket_ids.append(cursor.lastrowid)
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM Events')
+        rows = cursor.fetchall()
+        conn.close()
+        events = [dict(row) for row in rows]
+        return jsonify({'events': events}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+@app.route('/events', methods = ['PATCH'])
+def update_event():
+    #Update event details
+    event_id = request.json.get('event_id')
+    name = request.json.get('name')
+    date = request.json.get('date')
+    description = request.json.get('description')
+    location = request.json.get('location')
+    time = request.json.get('time')
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            UPDATE Events
+            SET name = ?, date = ?, description = ?, location = ?, time = ?
+            WHERE event_id = ?
+        ''', (name, date, description, location, time, event_id))
         conn.commit()
         conn.close()
-        return jsonify({'message': 'Tickets awarded', 'ticket_ids': created_ticket_ids}), 201
+        return jsonify({'message': 'Event updated successfully'}), 200
     except Exception as e:
-        conn.close()
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/change_username_email', methods=['POST'])
 def change_username_email():
@@ -306,7 +302,31 @@ def change_username_email():
     else:
         return jsonify({'error': 'Invalid user ID or password'}), 401
     
-    
+
+@app.route('/tickets', methods=['POST'])
+def create_ticket():
+    # Create a ticket for a user for a specific event.
+    #Things to fix later: price handling
+    user_id = request.json.get('user_id')
+    event_id = request.json.get('event_id')
+    price = request.json.get('price', 0.0)
+    purchase_date = datetime.utcnow().isoformat()  
+
+    if not user_id or not event_id:
+        return jsonify({'error': 'user_id and event_id are required'}), 400
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('INSERT INTO Tickets (user_id, event_id, purchase_date, price) VALUES (?, ?, ?, ?)',
+                       (user_id, event_id, purchase_date, price))
+        conn.commit()
+        ticket_id = cursor.lastrowid
+        conn.close()
+        return jsonify({'message': 'Ticket created', 'ticket_id': ticket_id}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
 
