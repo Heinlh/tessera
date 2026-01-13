@@ -330,4 +330,23 @@ def create_ticket():
 if __name__ == '__main__':
     app.run(debug=True)
 
-      
+
+@app.route('/events', methods=['GET'])
+def get_event_image():
+    # Get the image URL for a specific event by event_id
+    event_id = request.args.get('event_id')
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT image FROM Events WHERE event_id = ?', (event_id,))
+        row = cursor.fetchone()
+        if row and row['image']:
+            return jsonify({'image': row['image']}), 200
+        else:
+            return jsonify({'error': 'Image URL not found for the given event_id'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
