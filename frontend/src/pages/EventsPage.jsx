@@ -6,7 +6,9 @@ function EventsPage() {
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/events')
+    // Get today's date in YYYY-MM-DD format to filter only future events
+    const today = new Date().toISOString().split('T')[0];
+    fetch(`http://localhost:5000/events?afterDate=${today}`)
       .then(response => response.json())
       .then(setEvents)
       .catch(error => console.error('Error fetching events:', error));
@@ -21,8 +23,9 @@ function EventsPage() {
             id={event.event_id}
             name={event.name}
             date={event.date}
+            time={event.time}
             location={event.location}
-            imageUrl={'https://i.imgur.com/E5Wjs.jpeg'} 
+            imageUrl={event.image} 
           />
         ))}
       </SimpleGrid>
