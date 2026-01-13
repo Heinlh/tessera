@@ -13,6 +13,7 @@ import {
   HStack,
 } from '@chakra-ui/react';
 import { ChevronDownIcon } from '@chakra-ui/icons';
+import { Link } from 'react-router-dom';
 
 function Navbar() {
   return (
@@ -40,7 +41,7 @@ function Navbar() {
             </HStack>
           </MenuButton>
           <MenuList>
-            <MenuItem>Sign In/Register</MenuItem>
+            <MenuItem as={Link} to="/signin">Sign In/Register</MenuItem>
             <MenuItem>Admin</MenuItem>
           </MenuList>
         </Menu>
