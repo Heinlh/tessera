@@ -158,6 +158,11 @@ function EventsPage() {
   const hasDateFilter = startDate || endDate;
 
   return (
+    <Box
+      minH="calc(100vh - 60px)"
+      bg="linear-gradient(180deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)"
+      w="full"
+    >
     <Container maxW="container.xl" centerContent>
       {/* Search and Date Filter Section */}
       <VStack spacing={4} py={6} w="full" maxW="lg">
@@ -176,12 +181,22 @@ function EventsPage() {
             />
           </InputGroup>
           <Button
-            bg="blue.500"
-            color="black"
+            bgGradient="linear(135deg, #3182ce 0%, #2c5282 100%)"
+            color="white"
             size="lg"
             borderRadius="full"
-            boxShadow="sm"
-            _hover={{ bg: 'blue.400' }}
+            boxShadow="md"
+            fontWeight="semibold"
+            _hover={{
+              bgGradient: 'linear(135deg, #2b6cb0 0%, #1a365d 100%)',
+              transform: 'translateY(-2px)',
+              boxShadow: 'lg',
+            }}
+            _active={{
+              transform: 'translateY(0)',
+              boxShadow: 'sm',
+            }}
+            transition="all 0.2s ease"
             onClick={() => setShowDatePicker(!showDatePicker)}
           >
             Date {hasDateFilter ? '✓' : ''}
@@ -206,6 +221,7 @@ function EventsPage() {
         ))}
       </SimpleGrid>
     </Container>
+    </Box>
   );
 }
 
