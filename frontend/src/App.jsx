@@ -4,7 +4,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Navbar from './components/Navbar';
 import EventsPage from './pages/EventsPage';
 import EventDetail from './pages/EventDetail';
-import SignIn from './components/SIgnIn'; 
+import SignIn from './components/SIgnIn';
+import MyProfile from './pages/MyProfile';
+import Register from './pages/Register';
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
           <Route path="/" element={<Navigate to="/events" replace />} />
           <Route path="/events/:id" element={<EventDetail />} />
           <Route path="/signin" element={<SignIn />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/profile" element={<MyProfile />} />
         </Routes>
       </Router>
     </ChakraProvider>

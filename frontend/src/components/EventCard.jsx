@@ -74,7 +74,24 @@ function EventCard({ id, name, date, time, location, imageUrl }) {
           <Text fontSize="sm">Date: {date}{time ? ` ${time}` : ''}</Text>
           <Text fontSize="sm">Location: {location}</Text>
           <Text fontSize="sm" color="red.500">{timeLeft}</Text>
-          <Button colorScheme="blue" mt="4" as={Link} to={`/events/${id}`}>
+          <Button
+            bgGradient="linear(135deg, #3182ce 0%, #2c5282 100%)"
+            color="white"
+            mt="4"
+            as={Link}
+            to={`/events/${id}`}
+            fontWeight="semibold"
+            _hover={{
+              bgGradient: 'linear(135deg, #2b6cb0 0%, #1a365d 100%)',
+              transform: 'translateY(-2px)',
+              boxShadow: 'lg',
+            }}
+            _active={{
+              transform: 'translateY(0)',
+              boxShadow: 'sm',
+            }}
+            transition="all 0.2s ease"
+          >
             Buy Tickets!
           </Button>
         </VStack>
