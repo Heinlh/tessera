@@ -1,0 +1,35 @@
+.seats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.seats > h3 {
+  color: black;
+  margin-top: 20px;
+}
+
+.stages {
+  margin-top: 30px;
+  background-color: black;
+  width: 30%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.stage {
+  color: white;
+}
+
+.seat-select {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.seats-select {
+  font-size: 20px;
+  margin-left: 20px;
+}
