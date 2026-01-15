@@ -140,16 +140,18 @@ function EventsPage() {
   // Filter events based on search query and selected date range
   const filteredEvents = useMemo(() => {
     return events.filter((event) => {
+      const location = [event.venue_name, event.city].filter(Boolean).join(', ');
       const matchesSearch =
         !searchQuery ||
-        event.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.location?.toLowerCase().includes(searchQuery.toLowerCase());
+        event.event_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        location.toLowerCase().includes(searchQuery.toLowerCase());
       
       let matchesDate = true;
+      const eventDate = event.start_datetime?.split('T')[0]; // Extract date portion from ISO datetime
       if (startDate && endDate) {
-        matchesDate = event.date >= startDate && event.date <= endDate;
+        matchesDate = eventDate >= startDate && eventDate <= endDate;
       } else if (startDate) {
-        matchesDate = event.date === startDate;
+        matchesDate = eventDate === startDate;
       }
       return matchesSearch && matchesDate;
     });
@@ -212,11 +214,12 @@ function EventsPage() {
           <EventCard
             key={event.event_id}
             id={event.event_id}
-            name={event.name}
-            date={event.date}
-            time={event.time}
-            location={event.location}
-            imageUrl={event.image} 
+            eventName={event.event_name}
+            startDatetime={event.start_datetime}
+            venueName={event.venue_name}
+            city={event.city}
+            imageUrl={event.image_url}
+            status={event.status}
           />
         ))}
       </SimpleGrid>

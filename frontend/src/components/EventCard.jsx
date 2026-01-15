@@ -1,39 +1,35 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Image, Text, VStack, Heading, LinkBox, Button } from '@chakra-ui/react';
+import { Box, Image, Text, VStack, Heading, LinkBox, Button, Badge, HStack } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
 
-function EventCard({ id, name, date, time, location, imageUrl }) {
+function EventCard({ id, eventName, startDatetime, venueName, city, imageUrl, status }) {
   const [timeLeft, setTimeLeft] = useState('');
 
-  // Parse a date string and optional time string into a Date object.
-  const parseEventDateTime = (dateStr, timeStr) => {
-    if (!dateStr) return null;
-    // If time is provided, try to create an ISO datetime string.
-    if (timeStr) {
-      // Normalize time like "14:30" or "14:30:00" to an ISO-like format
-      const t = timeStr.trim();
-      // If time already looks like 24h (HH:MM or HH:MM:SS)
-      if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(t)) {
-        const padded = t.split(':').map((s, i) => (i === 0 && s.length === 1 ? `0${s}` : s)).join(':');
-        const iso = `${dateStr}T${padded}`;
-        const d = new Date(iso);
-        if (!isNaN(d.getTime())) return d;
-      }
-      // Fallback: try Date parsing of combined string (handles "2:30 PM")
-      const combined = `${dateStr} ${t}`;
-      const d2 = new Date(combined);
-      if (!isNaN(d2.getTime())) return d2;
-    }
-
-    // Fallback: just parse the date (will be midnight local time)
-    const d = new Date(dateStr);
+  // Parse ISO datetime string into a Date object
+  const parseEventDateTime = (datetimeStr) => {
+    if (!datetimeStr) return null;
+    const d = new Date(datetimeStr);
     if (!isNaN(d.getTime())) return d;
     return null;
   };
 
+  // Format datetime for display
+  const formatDateTime = (datetimeStr) => {
+    const d = parseEventDateTime(datetimeStr);
+    if (!d) return 'Date TBD';
+    return d.toLocaleString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  };
+
   useEffect(() => {
     const updateTimer = () => {
-      const eventDateObj = parseEventDateTime(date, time);
+      const eventDateObj = parseEventDateTime(startDatetime);
       if (!eventDateObj) {
         setTimeLeft('Date not available');
         return;
@@ -61,40 +57,136 @@ function EventCard({ id, name, date, time, location, imageUrl }) {
     const timerId = setInterval(updateTimer, 1000);
 
     return () => clearInterval(timerId);
-  }, [date, time]);
+  }, [startDatetime]);
+
+  // Get status badge color
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'ON_SALE': return 'green';
+      case 'SCHEDULED': return 'blue';
+      case 'CANCELLED': return 'red';
+      case 'COMPLETED': return 'gray';
+      default: return 'gray';
+    }
+  };
+
+  const location = [venueName, city].filter(Boolean).join(', ');
 
   return (
-    <LinkBox as="article" w="full" borderWidth="1px" rounded="md" overflow="hidden" boxShadow="md">
-      <VStack align="stretch">
-        {imageUrl && (
-          <Image borderRadius="md" src={imageUrl} alt={`Image for ${name}`} objectFit="cover" width="full" />
-        )}
-        <VStack align="stretch" p="4">
-        <Heading size="md" my="2">{name}</Heading>
-          <Text fontSize="sm">Date: {date}{time ? ` ${time}` : ''}</Text>
-          <Text fontSize="sm">Location: {location}</Text>
-          <Text fontSize="sm" color="red.500">{timeLeft}</Text>
-          <Button
-            bgGradient="linear(135deg, #3182ce 0%, #2c5282 100%)"
-            color="white"
-            mt="4"
-            as={Link}
-            to={`/events/${id}`}
-            fontWeight="semibold"
-            _hover={{
-              bgGradient: 'linear(135deg, #2b6cb0 0%, #1a365d 100%)',
-              transform: 'translateY(-2px)',
-              boxShadow: 'lg',
-            }}
-            _active={{
-              transform: 'translateY(0)',
-              boxShadow: 'sm',
-            }}
-            transition="all 0.2s ease"
+    <LinkBox 
+      as="article" 
+      w="full" 
+      borderRadius="xl" 
+      overflow="hidden" 
+      boxShadow="lg" 
+      bg="white"
+      transition="all 0.3s ease"
+      _hover={{
+        transform: 'translateY(-8px)',
+        boxShadow: '2xl',
+      }}
+    >
+      <Box position="relative">
+        {imageUrl ? (
+          <Image 
+            src={imageUrl} 
+            alt={`Image for ${eventName}`} 
+            objectFit="cover" 
+            width="full" 
+            height="220px"
+          />
+        ) : (
+          <Box 
+            height="220px" 
+            bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
           >
-            Buy Tickets!
-          </Button>
+            <Text fontSize="4xl">🎭</Text>
+          </Box>
+        )}
+        
+        {/* Status Badge Overlay */}
+        <Box position="absolute" top={3} left={3}>
+          {status && (
+            <Badge 
+              colorScheme={getStatusColor(status)} 
+              fontSize="xs"
+              px={2}
+              py={1}
+              borderRadius="full"
+              textTransform="uppercase"
+              fontWeight="bold"
+              boxShadow="md"
+            >
+              {status.replace('_', ' ')}
+            </Badge>
+          )}
+        </Box>
+
+        {/* Countdown Overlay */}
+        {status === 'ON_SALE' && timeLeft && !timeLeft.includes('started') && (
+          <Box 
+            position="absolute" 
+            bottom={0} 
+            left={0} 
+            right={0}
+            bg="blackAlpha.700"
+            color="white"
+            py={2}
+            px={3}
+          >
+            <HStack justify="center" spacing={1}>
+              <Text fontSize="xs" fontWeight="medium">⏰ Starts in:</Text>
+              <Text fontSize="xs" fontWeight="bold" color="yellow.300">{timeLeft}</Text>
+            </HStack>
+          </Box>
+        )}
+      </Box>
+
+      <VStack align="stretch" p={5} spacing={3}>
+        <Heading size="md" noOfLines={2} lineHeight="shorter">
+          {eventName}
+        </Heading>
+        
+        <VStack align="stretch" spacing={1}>
+          <HStack>
+            <Text fontSize="sm" color="gray.500">📅</Text>
+            <Text fontSize="sm" color="gray.600" fontWeight="medium">
+              {formatDateTime(startDatetime)}
+            </Text>
+          </HStack>
+          {location && (
+            <HStack>
+              <Text fontSize="sm" color="gray.500">📍</Text>
+              <Text fontSize="sm" color="gray.600" noOfLines={1}>
+                {location}
+              </Text>
+            </HStack>
+          )}
         </VStack>
+
+        <Button
+          as={Link}
+          to={`/events/${id}`}
+          colorScheme={status === 'ON_SALE' ? 'blue' : 'gray'}
+          size="lg"
+          w="full"
+          mt={2}
+          fontWeight="bold"
+          isDisabled={status === 'CANCELLED' || status === 'COMPLETED'}
+          _hover={{
+            transform: status === 'ON_SALE' ? 'scale(1.02)' : 'none',
+          }}
+          transition="all 0.2s ease"
+        >
+          {status === 'ON_SALE' && '🎫 Get Tickets'}
+          {status === 'SCHEDULED' && '🔔 Coming Soon'}
+          {status === 'CANCELLED' && '❌ Cancelled'}
+          {status === 'COMPLETED' && '✓ Event Ended'}
+          {!status && '🎫 Get Tickets'}
+        </Button>
       </VStack>
     </LinkBox>
   );
