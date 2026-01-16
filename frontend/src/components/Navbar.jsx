@@ -188,7 +188,7 @@ function Navbar() {
                 </>
               )}
 
-              {/* Show My Profile and Logout if logged in */}
+              {/* Show My Profile, My Cart, and Logout if logged in */}
               {isSignedIn && (
                 <>
                   <MenuItem
@@ -201,6 +201,17 @@ function Navbar() {
                     mx={2}
                   >
                     My Profile
+                  </MenuItem>
+                  <MenuItem
+                    as={Link}
+                    to="/checkout"
+                    color="black"
+                    fontWeight="medium"
+                    _hover={{ bg: 'green.50', color: 'green.600' }}
+                    borderRadius="md"
+                    mx={2}
+                  >
+                    🛒 My Cart
                   </MenuItem>
                   <MenuDivider />
                   <MenuItem

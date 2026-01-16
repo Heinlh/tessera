@@ -55,7 +55,7 @@ function SignIn() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/login', {
+      const response = await fetch('http://localhost:5000/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -102,7 +102,7 @@ function SignIn() {
     try {
       // Check if email exists in database
       // For now, we'll simulate this check - in production you'd have a dedicated endpoint
-      const response = await fetch('http://127.0.0.1:5000/emails', {
+      const response = await fetch('http://localhost:5000/emails', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

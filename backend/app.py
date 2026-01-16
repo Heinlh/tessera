@@ -13,12 +13,14 @@ from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import get_jwt
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import JWTManager
+import stripe
+
 
 # Flask application instance
 # This file defines a small REST API for users, events and ticketing backed by SQLite.
 app = Flask(__name__)
 CORS(app)
-
+stripe.api_key = "***REDACTED_STRIPE_KEY***"
 
 # Setup the Flask-JWT-Extended extension
 app.config["JWT_SECRET_KEY"] = "supersecret123"
@@ -28,6 +30,51 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=15)
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=14)
   # Change this!
 jwt = JWTManager(app)
+
+# Configure JWT to handle dictionary identities (user info including role)
+import json
+
+@jwt.user_identity_loader
+def user_identity_lookup(user):
+    """Convert user dict to JSON string for JWT subject"""
+    if isinstance(user, dict):
+        return json.dumps(user)
+    return user
+
+@jwt.user_lookup_loader
+def user_lookup_callback(_jwt_header, jwt_data):
+    """Load user from JWT - returns the identity"""
+    identity = jwt_data["sub"]
+    if isinstance(identity, str):
+        try:
+            return json.loads(identity)
+        except json.JSONDecodeError:
+            return identity
+    return identity
+
+# Override get_jwt_identity to always return dict
+from flask_jwt_extended import verify_jwt_in_request
+def get_current_user_identity():
+    """Helper to get parsed user identity from JWT"""
+    identity = get_jwt_identity()
+    if isinstance(identity, str):
+        try:
+            return json.loads(identity)
+        except json.JSONDecodeError:
+            return {'user_id': identity}
+    return identity
+
+
+def get_current_user():
+    """Helper function to get the current user identity as a dictionary.
+    Use this instead of get_jwt_identity() directly."""
+    identity = get_jwt_identity()
+    if isinstance(identity, str):
+        try:
+            return json.loads(identity)
+        except json.JSONDecodeError:
+            return {'user_id': identity}
+    return identity
 
 
 # --- Role-based access control decorators ---
@@ -39,7 +86,7 @@ def admin_required():
     def decorator(fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):
-            current_user = get_jwt_identity()
+            current_user = get_current_user()
             if current_user.get('role') != 'ADMIN':
                 return jsonify({'error': 'Admin access required'}), 403
             return fn(*args, **kwargs)
@@ -56,7 +103,7 @@ def user_required():
     def decorator(fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):
-            current_user = get_jwt_identity()
+            current_user = get_current_user()
             if current_user.get('role') not in ['CUSTOMER', 'ADMIN']:
                 return jsonify({'error': 'User access required'}), 403
             return fn(*args, **kwargs)
@@ -318,7 +365,7 @@ def refresh():
     Requires a valid refresh_token in the Authorization header.
     Returns a new access_token (and optionally a new refresh_token for rotation).
     """
-    current_user = get_jwt_identity()
+    current_user = get_current_user()
     
     # Create a new access token
     new_access_token = create_access_token(identity=current_user)
@@ -334,12 +381,12 @@ def refresh():
 
 @app.route('/me', methods=['GET'])
 @jwt_required()
-def get_current_user():
+def get_me():
     """
     Get the current authenticated user's profile.
     Requires a valid access_token in the Authorization header.
     """
-    current_user = get_jwt_identity()
+    current_user = get_current_user()
     return jsonify({'user': current_user}), 200
 
 
@@ -348,7 +395,7 @@ def get_current_user():
 def change_password():
     # Endpoint to change a user's password.
     # Requires JWT authentication and current password for verification.
-    current_user = get_jwt_identity()
+    current_user = get_current_user()
     user_id = current_user['user_id']
     
     current_password = request.json.get('current_password')
@@ -385,7 +432,7 @@ def change_password():
 @jwt_required()
 def delete_user():
     # Delete a user account and any related tickets. Requires JWT auth and password verification.
-    current_user = get_jwt_identity()
+    current_user = get_current_user()
     user_id = current_user['user_id']
     
     password = request.json.get('password')
@@ -530,7 +577,7 @@ def update_event():
 def change_username_email():
     # Change a user's username and email after verifying their password.
     # Requires JWT authentication. Expects: { "new_username":"...", "new_email":"...", "password":"..." }
-    current_user = get_jwt_identity()
+    current_user = get_current_user()
     user_id = current_user['user_id']
     
     new_username = request.json.get('new_username')
@@ -577,7 +624,7 @@ def create_order():
     """
     import uuid
     
-    current_user = get_jwt_identity()
+    current_user = get_current_user()
     user_id = current_user['user_id']
     
     event_id = request.json.get('event_id')
@@ -674,7 +721,7 @@ def get_user_orders():
     """
     Get all orders for the current user with their tickets.
     """
-    current_user = get_jwt_identity()
+    current_user = get_current_user()
     user_id = current_user['user_id']
     
     try:
@@ -785,7 +832,7 @@ def get_cart():
     """
     Get the current user's active cart with reserved seats.
     """
-    current_user = get_jwt_identity()
+    current_user = get_current_user()
     user_id = current_user['user_id']
     
     try:
@@ -794,7 +841,7 @@ def get_cart():
         
         # Get active (OPEN) carts for this user
         cursor.execute('''
-            SELECT c.*, e.event_name, e.start_datetime, v.venue_name
+            SELECT c.*, e.event_name, e.start_datetime, e.image_url, v.venue_name
             FROM Carts c
             JOIN Events e ON c.event_id = e.event_id
             LEFT JOIN Venues v ON e.venue_id = v.venue_id
@@ -848,7 +895,7 @@ def reserve_seats(event_id):
     
     Returns error if any seats are not available.
     """
-    current_user = get_jwt_identity()
+    current_user = get_current_user()
     user_id = current_user['user_id']
     
     seat_ids = request.json.get('seat_ids', [])
@@ -1009,7 +1056,7 @@ def release_seats(event_id):
     - Removes seats from cart
     - Sets seat status back to AVAILABLE
     """
-    current_user = get_jwt_identity()
+    current_user = get_current_user()
     user_id = current_user['user_id']
     
     seat_ids = request.json.get('seat_ids', [])
@@ -1092,7 +1139,7 @@ def checkout_cart(cart_id):
     """
     import uuid
     
-    current_user = get_jwt_identity()
+    current_user = get_current_user()
     user_id = current_user['user_id']
     
     try:
@@ -1291,7 +1338,7 @@ def get_ticket(ticket_id):
     Get a specific ticket's details.
     User can only view their own tickets.
     """
-    current_user = get_jwt_identity()
+    current_user = get_current_user()
     user_id = current_user['user_id']
     
     try:
@@ -1466,3 +1513,288 @@ def get_event_image():
     finally:
         if conn:
             conn.close()
+
+
+@app.route('/create-payment-intent', methods=['POST'])
+@jwt_required()
+def create_payment_intent():
+    """
+    Create a Stripe PaymentIntent for the user's cart.
+    
+    Expected JSON: { "cart_id": 123 }
+    
+    Flow:
+    1. Verify cart belongs to user and is still valid (not expired)
+    2. Calculate total from cart seats with pricing
+    3. Create Stripe PaymentIntent
+    4. Return client_secret for frontend to complete payment
+    """
+    import uuid
+    
+    current_user = get_current_user()
+    user_id = current_user['user_id']
+    
+    try:
+        data = request.json
+        cart_id = data.get('cart_id')
+        
+        if not cart_id:
+            return jsonify({'error': 'cart_id is required'}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verify cart belongs to user and is open
+        cursor.execute('''
+            SELECT c.*, e.event_id, e.event_name
+            FROM Carts c
+            JOIN Events e ON c.event_id = e.event_id
+            WHERE c.cart_id = ? AND c.user_id = ? AND c.status = 'OPEN'
+        ''', (cart_id, user_id))
+        cart = cursor.fetchone()
+        
+        if not cart:
+            conn.close()
+            return jsonify({'error': 'Cart not found or already processed'}), 404
+        
+        # Check if cart has expired
+        if cart['expires_at'] < datetime.utcnow().isoformat():
+            cursor.execute('UPDATE Carts SET status = "EXPIRED" WHERE cart_id = ?', (cart_id,))
+            conn.commit()
+            conn.close()
+            return jsonify({'error': 'Cart has expired. Please reserve seats again.'}), 410
+        
+        event_id = cart['event_id']
+        
+        # Get all seats in cart with pricing
+        cursor.execute('''
+            SELECT s.seat_id, s.section, s.row_label, s.seat_number, 
+                   COALESCE(pt.price_cents, 0) as price_cents
+            FROM CartSeats cs
+            JOIN Seats s ON cs.seat_id = s.seat_id
+            LEFT JOIN SectionPricing sp ON s.section = sp.section AND sp.event_id = ?
+            LEFT JOIN PriceTiers pt ON sp.price_tier_id = pt.price_tier_id
+            WHERE cs.cart_id = ?
+        ''', (event_id, cart_id))
+        seats = cursor.fetchall()
+        
+        if not seats:
+            conn.close()
+            return jsonify({'error': 'Cart is empty'}), 400
+        
+        # Verify all seats are still held by this cart
+        for seat in seats:
+            cursor.execute('''
+                SELECT status, held_by_cart_id FROM EventSeatStatus
+                WHERE event_id = ? AND seat_id = ?
+            ''', (event_id, seat['seat_id']))
+            status = cursor.fetchone()
+            if not status or status['status'] != 'HELD' or status['held_by_cart_id'] != cart_id:
+                conn.close()
+                return jsonify({
+                    'error': f'Seat {seat["row_label"]}{seat["seat_number"]} is no longer reserved for you'
+                }), 409
+        
+        conn.close()
+        
+        # Calculate total amount in cents
+        total_cents = sum(seat['price_cents'] for seat in seats)
+        
+        if total_cents <= 0:
+            return jsonify({'error': 'Invalid total amount'}), 400
+        
+        # Create Stripe PaymentIntent with metadata for verification later
+        payment_intent = stripe.PaymentIntent.create(
+            amount=total_cents,
+            currency='usd',
+            metadata={
+                'cart_id': str(cart_id),
+                'user_id': str(user_id),
+                'event_id': str(event_id),
+                'seat_count': str(len(seats))
+            }
+        )
+        
+        return jsonify({
+            'clientSecret': payment_intent['client_secret'],
+            'paymentIntentId': payment_intent['id'],
+            'amount': total_cents,
+            'currency': 'usd',
+            'cart_id': cart_id,
+            'seat_count': len(seats)
+        }), 200
+        
+    except stripe.error.StripeError as e:
+        return jsonify({'error': f'Stripe error: {str(e)}'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/complete-purchase', methods=['POST'])
+@jwt_required()
+def complete_purchase():
+    """
+    Complete a purchase after successful Stripe payment.
+    
+    Expected JSON: { "paymentIntentId": "pi_xxx", "cart_id": 123 }
+    
+    Flow:
+    1. Verify payment was successful with Stripe
+    2. Verify cart still belongs to user and matches payment metadata
+    3. Create Order, OrderItems, and Tickets
+    4. Update seat status from HELD to SOLD
+    5. Mark cart as CONVERTED
+    6. Return order details with tickets
+    """
+    import uuid
+    
+    current_user = get_current_user()
+    user_id = current_user['user_id']
+    
+    try:
+        data = request.json
+        payment_intent_id = data.get('paymentIntentId')
+        cart_id = data.get('cart_id')
+        
+        if not payment_intent_id or not cart_id:
+            return jsonify({'error': 'paymentIntentId and cart_id are required'}), 400
+        
+        # Retrieve and verify payment intent from Stripe
+        payment_intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+        
+        if payment_intent.status != 'succeeded':
+            return jsonify({
+                'error': 'Payment not successful',
+                'payment_status': payment_intent.status
+            }), 400
+        
+        # Verify metadata matches (security check)
+        metadata = payment_intent.metadata
+        if metadata.get('cart_id') != str(cart_id) or metadata.get('user_id') != str(user_id):
+            return jsonify({'error': 'Payment verification failed - cart mismatch'}), 403
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verify cart belongs to user and is still open
+        cursor.execute('''
+            SELECT c.*, e.event_id, e.event_name
+            FROM Carts c
+            JOIN Events e ON c.event_id = e.event_id
+            WHERE c.cart_id = ? AND c.user_id = ? AND c.status = 'OPEN'
+        ''', (cart_id, user_id))
+        cart = cursor.fetchone()
+        
+        if not cart:
+            conn.close()
+            return jsonify({'error': 'Cart not found or already processed'}), 404
+        
+        event_id = cart['event_id']
+        
+        # Get all seats in cart with pricing
+        cursor.execute('''
+            SELECT s.seat_id, s.section, s.row_label, s.seat_number,
+                   COALESCE(pt.price_cents, 0) as price_cents, pt.tier_name
+            FROM CartSeats cs
+            JOIN Seats s ON cs.seat_id = s.seat_id
+            LEFT JOIN SectionPricing sp ON s.section = sp.section AND sp.event_id = ?
+            LEFT JOIN PriceTiers pt ON sp.price_tier_id = pt.price_tier_id
+            WHERE cs.cart_id = ?
+        ''', (event_id, cart_id))
+        seats = cursor.fetchall()
+        
+        if not seats:
+            conn.close()
+            return jsonify({'error': 'Cart is empty'}), 400
+        
+        # Verify all seats are still held by this cart
+        for seat in seats:
+            cursor.execute('''
+                SELECT status, held_by_cart_id FROM EventSeatStatus
+                WHERE event_id = ? AND seat_id = ?
+            ''', (event_id, seat['seat_id']))
+            status = cursor.fetchone()
+            if not status or status['status'] != 'HELD' or status['held_by_cart_id'] != cart_id:
+                conn.close()
+                return jsonify({
+                    'error': f'Seat {seat["row_label"]}{seat["seat_number"]} is no longer reserved'
+                }), 409
+        
+        # Calculate total (should match payment intent)
+        total_cents = sum(seat['price_cents'] for seat in seats)
+        
+        # Create the order with Stripe payment reference
+        cursor.execute('''
+            INSERT INTO Orders (user_id, event_id, status, total_cents)
+            VALUES (?, ?, 'PAID', ?)
+        ''', (user_id, event_id, total_cents))
+        order_id = cursor.lastrowid
+        
+        tickets_created = []
+        
+        # Create order items and tickets for each seat
+        for seat in seats:
+            seat_id = seat['seat_id']
+            price_cents = seat['price_cents']
+            
+            # Create order item
+            cursor.execute('''
+                INSERT INTO OrderItems (order_id, seat_id, unit_price_cents, line_total_cents)
+                VALUES (?, ?, ?, ?)
+            ''', (order_id, seat_id, price_cents, price_cents))
+            order_item_id = cursor.lastrowid
+            
+            # Generate unique barcode and create ticket
+            barcode = str(uuid.uuid4()).replace('-', '')[:16].upper()
+            cursor.execute('''
+                INSERT INTO Tickets (order_item_id, barcode_num, status)
+                VALUES (?, ?, 'ISSUED')
+            ''', (order_item_id, barcode))
+            ticket_id = cursor.lastrowid
+            
+            tickets_created.append({
+                'ticket_id': ticket_id,
+                'seat_id': seat_id,
+                'row_label': seat['row_label'],
+                'seat_number': seat['seat_number'],
+                'section': seat['section'],
+                'barcode': barcode,
+                'price_cents': price_cents
+            })
+            
+            # Update seat status to SOLD
+            cursor.execute('''
+                UPDATE EventSeatStatus 
+                SET status = 'SOLD', held_by_cart_id = NULL, hold_expires_at = NULL, updated_at = datetime('now')
+                WHERE event_id = ? AND seat_id = ?
+            ''', (event_id, seat_id))
+        
+        # Mark cart as converted
+        cursor.execute('''
+            UPDATE Carts SET status = 'CONVERTED' WHERE cart_id = ?
+        ''', (cart_id,))
+        
+        # Clear cart seats
+        cursor.execute('DELETE FROM CartSeats WHERE cart_id = ?', (cart_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'message': 'Purchase completed successfully',
+            'order_id': order_id,
+            'event_name': cart['event_name'],
+            'event_id': event_id,
+            'total_cents': total_cents,
+            'total_dollars': total_cents / 100,
+            'payment_intent_id': payment_intent_id,
+            'tickets': tickets_created,
+            'ticket_count': len(tickets_created)
+        }), 201
+        
+    except stripe.error.StripeError as e:
+        return jsonify({'error': f'Stripe error: {str(e)}'}), 400
+    except Exception as e:
+        if 'conn' in locals() and conn:
+            conn.close()
+        return jsonify({'error': str(e)}), 500

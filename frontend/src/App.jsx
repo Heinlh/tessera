@@ -7,6 +7,7 @@ import EventDetail from './pages/EventDetail';
 import SignIn from './components/SIgnIn';
 import MyProfile from './pages/MyProfile';
 import Register from './pages/Register';
+import Checkout from './pages/Checkout';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           <Route path="/signin" element={<SignIn />} />
           <Route path="/register" element={<Register />} />
           <Route path="/profile" element={<MyProfile />} />
+          <Route path="/checkout" element={<Checkout />} />
         </Routes>
       </Router>
     </ChakraProvider>
