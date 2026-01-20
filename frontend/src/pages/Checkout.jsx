@@ -57,6 +57,7 @@ const cardElementOptions = {
       iconColor: '#e53e3e',
     },
   },
+  disableLink: true,
 };
 
 // Payment Form Component
