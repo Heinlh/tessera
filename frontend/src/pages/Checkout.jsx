@@ -38,7 +38,7 @@ import {
 import { DeleteIcon, CheckCircleIcon, LockIcon, ArrowBackIcon } from '@chakra-ui/icons';
 
 // Initialize Stripe with your publishable key
-const stripePromise = loadStripe('pk_test_51SqGSvIiRRE19iQwATpWGIbOH4KbqFaPQOH9yrECm2gwS4n39TKMfABNJ1SaJK87b6aAGkIcfHDLnPwwfD69EKTY007M7AsSM5');
+const stripePromise = loadStripe('pk_test_51SqGSvIiRRE19iQweWKvcSjCRuDhWc5ne2hOjSolKijoFGmZtuTDDSDnAhyRCi4iFSAfvM6FNUxkCtuTLC8iKySi006GBzo4og');
 
 // Stripe CardElement styling
 const cardElementOptions = {
@@ -496,7 +496,7 @@ function Checkout() {
                       📍 {cart.venue_name || 'Venue TBD'}
                     </Text>
                     <Text opacity={0.9} fontSize="sm">
-                      📅 {formatDateTime(cart.start_datetime)}
+                      {formatDateTime(cart.start_datetime)}
                     </Text>
                   </VStack>
 
@@ -636,7 +636,7 @@ function Checkout() {
 
               <VStack spacing={2}>
                 <Heading size="lg" color="gray.800">
-                  Thank You! 🎉
+                  Thank You!
                 </Heading>
                 <Text color="gray.600" fontSize="lg">
                   Your purchase was successful!

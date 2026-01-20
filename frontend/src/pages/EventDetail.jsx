@@ -225,6 +225,59 @@ function EventDetail() {
     onSeatModalOpen();
   };
 
+  // Helper function to make authenticated requests with token refresh
+  const authenticatedFetch = async (url, options = {}) => {
+    let token = localStorage.getItem('access_token');
+    
+    const makeRequest = async (authToken) => {
+      return fetch(url, {
+        ...options,
+        headers: {
+          ...options.headers,
+          'Authorization': `Bearer ${authToken}`,
+        },
+      });
+    };
+
+    let response = await makeRequest(token);
+    
+    // If unauthorized, try to refresh the token
+    if (response.status === 401) {
+      const refreshToken = localStorage.getItem('refresh_token');
+      if (refreshToken) {
+        try {
+          const refreshResponse = await fetch('http://localhost:5000/refresh', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${refreshToken}`,
+            },
+          });
+          
+          if (refreshResponse.ok) {
+            const refreshData = await refreshResponse.json();
+            localStorage.setItem('access_token', refreshData.access_token);
+            localStorage.setItem('refresh_token', refreshData.refresh_token);
+            // Retry the original request with new token
+            response = await makeRequest(refreshData.access_token);
+          } else {
+            // Refresh failed, clear tokens and redirect to login
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            throw new Error('Session expired. Please sign in again.');
+          }
+        } catch (refreshError) {
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          throw new Error('Session expired. Please sign in again.');
+        }
+      } else {
+        throw new Error('Please sign in to continue.');
+      }
+    }
+    
+    return response;
+  };
+
   // Add seat to cart
   const handleAddSeatToCart = async () => {
     if (!pendingSeat) return;
@@ -232,12 +285,10 @@ function EventDetail() {
     setReservingSeats(true);
 
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`http://localhost:5000/events/${id}/reserve`, {
+      const response = await authenticatedFetch(`http://localhost:5000/events/${id}/reserve`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ seat_ids: [pendingSeat.seat_id] }),
       });
@@ -259,7 +310,7 @@ function EventDetail() {
       ));
 
       toast({
-        title: 'Seat added to cart! 🎫',
+        title: 'Seat added to cart!',
         description: `Row ${pendingSeat.row_label}, Seat ${pendingSeat.seat_number} - Held for 10 minutes`,
         status: 'success',
         duration: 3000,
@@ -268,6 +319,17 @@ function EventDetail() {
       onSeatModalClose();
       setPendingSeat(null);
     } catch (err) {
+      // Handle session expired - redirect to login
+      if (err.message.includes('Session expired') || err.message.includes('sign in')) {
+        toast({
+          title: 'Session Expired',
+          description: 'Please sign in again to continue.',
+          status: 'warning',
+          duration: 3000,
+        });
+        navigate('/signin');
+        return;
+      }
       toast({
         title: 'Could not reserve seat',
         description: err.message,
@@ -282,12 +344,10 @@ function EventDetail() {
   // Remove seat from cart
   const handleRemoveSeat = async (seat) => {
     try {
-      const token = localStorage.getItem('access_token');
-      await fetch(`http://localhost:5000/events/${id}/release`, {
+      await authenticatedFetch(`http://localhost:5000/events/${id}/release`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ seat_ids: [seat.seat_id] }),
       });
@@ -309,6 +369,9 @@ function EventDetail() {
       });
     } catch (err) {
       console.error('Error releasing seat:', err);
+      if (err.message.includes('Session expired') || err.message.includes('sign in')) {
+        navigate('/signin');
+      }
     }
   };
 
@@ -412,7 +475,7 @@ function EventDetail() {
                 </Badge>
                 {inventoryStats.percentSold > 80 && (
                   <Badge colorScheme="red" fontSize="sm" px={3} py={1} borderRadius="full">
-                    🔥 Selling Fast
+                    Selling Fast
                   </Badge>
                 )}
               </HStack>
@@ -681,7 +744,7 @@ function EventDetail() {
                     </HStack>
                   )}
                   <HStack>
-                    <Text fontSize="xl">📅</Text>
+                    <Text fontSize="xl"></Text>
                     <Text color="gray.600">{formatDateTime(event.start_datetime)}</Text>
                   </HStack>
                   {event.end_datetime && (

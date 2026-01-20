@@ -103,7 +103,7 @@ function EventCard({ id, eventName, startDatetime, venueName, city, imageUrl, st
             alignItems="center"
             justifyContent="center"
           >
-            <Text fontSize="4xl">🎭</Text>
+            <Text fontSize="4xl"></Text>
           </Box>
         )}
         
@@ -152,7 +152,7 @@ function EventCard({ id, eventName, startDatetime, venueName, city, imageUrl, st
         
         <VStack align="stretch" spacing={1}>
           <HStack>
-            <Text fontSize="sm" color="gray.500">📅</Text>
+            <Text fontSize="sm" color="gray.500"></Text>
             <Text fontSize="sm" color="gray.600" fontWeight="medium">
               {formatDateTime(startDatetime)}
             </Text>
@@ -181,11 +181,11 @@ function EventCard({ id, eventName, startDatetime, venueName, city, imageUrl, st
           }}
           transition="all 0.2s ease"
         >
-          {status === 'ON_SALE' && '🎫 Get Tickets'}
-          {status === 'SCHEDULED' && '🔔 Coming Soon'}
-          {status === 'CANCELLED' && '❌ Cancelled'}
+          {status === 'ON_SALE' && 'Get Tickets'}
+          {status === 'SCHEDULED' && 'Coming Soon'}
+          {status === 'CANCELLED' && 'Cancelled'}
           {status === 'COMPLETED' && '✓ Event Ended'}
-          {!status && '🎫 Get Tickets'}
+          {!status && 'Get Tickets'}
         </Button>
       </VStack>
     </LinkBox>
