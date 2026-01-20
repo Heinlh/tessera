@@ -7,11 +7,13 @@ A REST API for ticketing, events, and seat reservations backed by SQLite.
 # IMPORTS
 # =============================================================================
 import json
+import os
 import sqlite3
 import uuid
 from datetime import datetime, timedelta
 from functools import wraps
 
+from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_jwt_extended import (
@@ -28,14 +30,19 @@ import stripe
 # =============================================================================
 # APP CONFIGURATION
 # =============================================================================
+# Load environment variables from .env file
+load_dotenv()
+
 app = Flask(__name__)
 CORS(app)
 
-# Stripe configuration
-stripe.api_key = "***REDACTED_STRIPE_KEY***"
+# Stripe configuration - MUST be set via environment variable
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
+if not stripe.api_key:
+    raise RuntimeError("STRIPE_SECRET_KEY environment variable is required")
 
 # JWT configuration
-app.config["JWT_SECRET_KEY"] = "change-me-use-env-var"  # TODO: Use environment variable in production
+app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "dev-secret-change-in-production")
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=15)
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=14)
 
