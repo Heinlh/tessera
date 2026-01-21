@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Image, Text, VStack, Heading, LinkBox, Button, Badge, HStack } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
+import { gradients } from '../theme';
 
 function EventCard({ id, eventName, startDatetime, venueName, city, imageUrl, status }) {
   const [timeLeft, setTimeLeft] = useState('');
@@ -76,15 +77,17 @@ function EventCard({ id, eventName, startDatetime, venueName, city, imageUrl, st
     <LinkBox 
       as="article" 
       w="full" 
-      borderRadius="xl" 
+      borderRadius="2xl" 
       overflow="hidden" 
-      boxShadow="lg" 
+      boxShadow="card"
       bg="white"
-      transition="all 0.3s ease"
+      transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
       _hover={{
         transform: 'translateY(-8px)',
-        boxShadow: '2xl',
+        boxShadow: 'cardHover',
       }}
+      border="1px solid"
+      borderColor="gray.100"
     >
       <Box position="relative">
         {imageUrl ? (
@@ -94,11 +97,13 @@ function EventCard({ id, eventName, startDatetime, venueName, city, imageUrl, st
             objectFit="cover" 
             width="full" 
             height="220px"
+            transition="transform 0.3s ease"
+            _groupHover={{ transform: 'scale(1.05)' }}
           />
         ) : (
           <Box 
             height="220px" 
-            bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+            bg={gradients.cardPlaceholder}
             display="flex"
             alignItems="center"
             justifyContent="center"
@@ -113,12 +118,13 @@ function EventCard({ id, eventName, startDatetime, venueName, city, imageUrl, st
             <Badge 
               colorScheme={getStatusColor(status)} 
               fontSize="xs"
-              px={2}
+              px={3}
               py={1}
               borderRadius="full"
               textTransform="uppercase"
               fontWeight="bold"
-              boxShadow="md"
+              boxShadow="sm"
+              backdropFilter="blur(4px)"
             >
               {status.replace('_', ' ')}
             </Badge>
@@ -133,34 +139,41 @@ function EventCard({ id, eventName, startDatetime, venueName, city, imageUrl, st
             left={0} 
             right={0}
             bg="blackAlpha.700"
+            backdropFilter="blur(4px)"
             color="white"
             py={2}
-            px={3}
+            px={4}
           >
-            <HStack justify="center" spacing={1}>
-              <Text fontSize="xs" fontWeight="medium">⏰ Starts in:</Text>
+            <HStack justify="center" spacing={2}>
+              <Text fontSize="xs" fontWeight="medium">Starts in:</Text>
               <Text fontSize="xs" fontWeight="bold" color="yellow.300">{timeLeft}</Text>
             </HStack>
           </Box>
         )}
       </Box>
 
-      <VStack align="stretch" p={5} spacing={3}>
-        <Heading size="md" noOfLines={2} lineHeight="shorter">
+      <VStack align="stretch" p={5} spacing={4}>
+        <Heading 
+          size="md" 
+          noOfLines={2} 
+          lineHeight="shorter"
+          color="gray.800"
+          letterSpacing="-0.01em"
+        >
           {eventName}
         </Heading>
         
-        <VStack align="stretch" spacing={1}>
+        <VStack align="stretch" spacing={2}>
           <HStack>
-            <Text fontSize="sm" color="gray.500"></Text>
+            <Text fontSize="sm" color="gray.400"></Text>
             <Text fontSize="sm" color="gray.600" fontWeight="medium">
               {formatDateTime(startDatetime)}
             </Text>
           </HStack>
           {location && (
             <HStack>
-              <Text fontSize="sm" color="gray.500">📍</Text>
-              <Text fontSize="sm" color="gray.600" noOfLines={1}>
+              <Text fontSize="sm" color="gray.400">📍</Text>
+              <Text fontSize="sm" color="gray.500" noOfLines={1}>
                 {location}
               </Text>
             </HStack>
@@ -170,21 +183,26 @@ function EventCard({ id, eventName, startDatetime, venueName, city, imageUrl, st
         <Button
           as={Link}
           to={`/events/${id}`}
-          colorScheme={status === 'ON_SALE' ? 'blue' : 'gray'}
+          bgGradient={status === 'ON_SALE' ? gradients.primaryButton : undefined}
+          colorScheme={status === 'ON_SALE' ? undefined : 'gray'}
+          color={status === 'ON_SALE' ? 'white' : undefined}
           size="lg"
           w="full"
           mt={2}
           fontWeight="bold"
+          borderRadius="xl"
           isDisabled={status === 'CANCELLED' || status === 'COMPLETED'}
           _hover={{
+            bgGradient: status === 'ON_SALE' ? gradients.primaryButtonHover : undefined,
             transform: status === 'ON_SALE' ? 'scale(1.02)' : 'none',
+            boxShadow: status === 'ON_SALE' ? 'lg' : undefined,
           }}
           transition="all 0.2s ease"
         >
           {status === 'ON_SALE' && 'Get Tickets'}
           {status === 'SCHEDULED' && 'Coming Soon'}
           {status === 'CANCELLED' && 'Cancelled'}
-          {status === 'COMPLETED' && '✓ Event Ended'}
+          {status === 'COMPLETED' && 'Event Ended'}
           {!status && 'Get Tickets'}
         </Button>
       </VStack>

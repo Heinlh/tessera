@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChakraProvider } from '@chakra-ui/react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import theme from './theme';
 import Navbar from './components/Navbar';
 import EventsPage from './pages/EventsPage';
 import EventDetail from './pages/EventDetail';
@@ -11,7 +12,7 @@ import Checkout from './pages/Checkout';
 
 function App() {
   return (
-    <ChakraProvider>
+    <ChakraProvider theme={theme}>
       <Router>
         <Navbar />
         <Routes>

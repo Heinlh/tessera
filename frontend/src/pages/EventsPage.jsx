@@ -11,9 +11,14 @@ import {
   Text,
   Button,
   IconButton,
+  Heading,
+  Spinner,
+  Center,
 } from '@chakra-ui/react';
-import { SearchIcon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
+import { SearchIcon, ChevronLeftIcon, ChevronRightIcon, CalendarIcon } from '@chakra-ui/icons';
 import EventCard from '../components/EventCard';
+import { gradients } from '../theme';
+import { PageWrapper, PageContainer, SectionHeader, EmptyState, PrimaryButton } from '../components/ui';
 
 // Date range grid component for filtering between two dates
 function DateGrid({ startDate, endDate, onSelectRange }) {
@@ -69,24 +74,55 @@ function DateGrid({ startDate, endDate, onSelectRange }) {
   const isEnd = (day) => day && endDate === formatDate(day);
 
   return (
-    <Box bg="white" p={4} borderRadius="md" boxShadow="sm" border="1px solid" borderColor="gray.200">
-      <Text fontSize="xs" color="gray.500" mb={3} textAlign="center">
-        Click a date to set the starting date , then click another to set the end of your range and events between will be shown.
+    <Box 
+      bg="white" 
+      p={5} 
+      borderRadius="2xl" 
+      boxShadow="card" 
+      border="1px solid" 
+      borderColor="gray.100"
+      w="full"
+      maxW="sm"
+    >
+      <Text fontSize="sm" color="gray.500" mb={4} textAlign="center">
+        Select a date range to filter events
       </Text>
-      <HStack justify="space-between" mb={3}>
-        <IconButton icon={<ChevronLeftIcon />} size="sm" variant="ghost" onClick={prevMonth} aria-label="Previous month" />
-        <Text fontWeight="semibold">{monthLabel}</Text>
-        <IconButton icon={<ChevronRightIcon />} size="sm" variant="ghost" onClick={nextMonth} aria-label="Next month" />
+      <HStack justify="space-between" mb={4}>
+        <IconButton 
+          icon={<ChevronLeftIcon />} 
+          size="sm" 
+          variant="ghost" 
+          onClick={prevMonth} 
+          aria-label="Previous month"
+          borderRadius="lg"
+          _hover={{ bg: 'gray.100' }}
+        />
+        <Text fontWeight="semibold" color="gray.700">{monthLabel}</Text>
+        <IconButton 
+          icon={<ChevronRightIcon />} 
+          size="sm" 
+          variant="ghost" 
+          onClick={nextMonth} 
+          aria-label="Next month"
+          borderRadius="lg"
+          _hover={{ bg: 'gray.100' }}
+        />
       </HStack>
       {startDate && !endDate && (
-        <Text fontSize="xs" color="blue.500" mb={2} textAlign="center">Click another date to complete the range</Text>
+        <Text fontSize="xs" color="blue.500" mb={3} textAlign="center" fontWeight="medium">
+          Click another date to complete the range
+        </Text>
       )}
       {startDate && endDate && (
-        <Text fontSize="xs" color="gray.600" mb={2} textAlign="center">{startDate} → {endDate}</Text>
+        <Box bg="blue.50" px={3} py={2} borderRadius="lg" mb={3}>
+          <Text fontSize="sm" color="blue.700" textAlign="center" fontWeight="medium">
+            {startDate} → {endDate}
+          </Text>
+        </Box>
       )}
       <SimpleGrid columns={7} spacing={1} textAlign="center">
         {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
-          <Text key={d} fontSize="xs" fontWeight="bold" color="gray.500">{d}</Text>
+          <Text key={d} fontSize="xs" fontWeight="bold" color="gray.400" py={2}>{d}</Text>
         ))}
         {daysInMonth.map((day, idx) => {
           const inRange = isInRange(day);
@@ -96,11 +132,15 @@ function DateGrid({ startDate, endDate, onSelectRange }) {
             <Button
               key={idx}
               size="sm"
+              h="36px"
               variant={(start || end) ? 'solid' : inRange ? 'outline' : 'ghost'}
               colorScheme={(start || end || inRange) ? 'blue' : 'gray'}
               bg={inRange && !start && !end ? 'blue.50' : undefined}
               isDisabled={!day}
               onClick={() => day && handleDayClick(day)}
+              borderRadius="lg"
+              fontWeight={start || end ? 'bold' : 'normal'}
+              transition="all 0.15s ease"
             >
               {day ? day.getDate() : ''}
             </Button>
@@ -108,7 +148,15 @@ function DateGrid({ startDate, endDate, onSelectRange }) {
         })}
       </SimpleGrid>
       {(startDate || endDate) && (
-        <Button size="xs" mt={3} variant="link" colorScheme="blue" onClick={() => onSelectRange('', '')}>
+        <Button 
+          size="sm" 
+          mt={4} 
+          w="full"
+          variant="ghost" 
+          colorScheme="blue" 
+          onClick={() => onSelectRange('', '')}
+          borderRadius="lg"
+        >
           Clear date filter
         </Button>
       )}
@@ -118,6 +166,7 @@ function DateGrid({ startDate, endDate, onSelectRange }) {
 
 function EventsPage() {
   const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -131,10 +180,17 @@ function EventsPage() {
   useEffect(() => {
     // Get today's date in YYYY-MM-DD format to filter only future events
     const today = new Date().toISOString().split('T')[0];
+    setLoading(true);
     fetch(`http://localhost:5000/events?afterDate=${today}`)
       .then(response => response.json())
-      .then(setEvents)
-      .catch(error => console.error('Error fetching events:', error));
+      .then(data => {
+        setEvents(data);
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error('Error fetching events:', error);
+        setLoading(false);
+      });
   }, []);
 
   // Filter events based on search query and selected date range
@@ -160,71 +216,137 @@ function EventsPage() {
   const hasDateFilter = startDate || endDate;
 
   return (
-    <Box
-      minH="calc(100vh - 60px)"
-      bg="linear-gradient(180deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)"
-      w="full"
-    >
-    <Container maxW="container.xl" centerContent>
-      {/* Search and Date Filter Section */}
-      <VStack spacing={4} py={6} w="full" maxW="lg">
-        <HStack w="full" spacing={3}>
-          <InputGroup size="lg" flex={1}>
-            <InputLeftElement pointerEvents="none">
-              <SearchIcon color="gray.400" />
-            </InputLeftElement>
-            <Input
-              placeholder="Search events by name or location..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              bg="white"
-              borderRadius="full"
-              boxShadow="sm"
-            />
-          </InputGroup>
-          <Button
-            bgGradient="linear(135deg, #3182ce 0%, #2c5282 100%)"
-            color="white"
-            size="lg"
-            borderRadius="full"
-            boxShadow="md"
-            fontWeight="semibold"
-            _hover={{
-              bgGradient: 'linear(135deg, #2b6cb0 0%, #1a365d 100%)',
-              transform: 'translateY(-2px)',
-              boxShadow: 'lg',
-            }}
-            _active={{
-              transform: 'translateY(0)',
-              boxShadow: 'sm',
-            }}
-            transition="all 0.2s ease"
-            onClick={() => setShowDatePicker(!showDatePicker)}
+    <PageWrapper bg={gradients.eventsBackground}>
+      <PageContainer maxW="container.xl" centerContent py={8}>
+        {/* Hero Section */}
+        <VStack spacing={2} mb={8} textAlign="center">
+          <Heading 
+            size="xl" 
+            color="gray.800"
+            letterSpacing="-0.02em"
           >
-            Date {hasDateFilter ? '✓' : ''}
-          </Button>
-        </HStack>
-        {showDatePicker && (
-          <DateGrid startDate={startDate} endDate={endDate} onSelectRange={handleSelectRange} />
-        )}
-      </VStack>
+            Discover Events
+          </Heading>
+          <Text color="gray.500" fontSize="lg" maxW="md">
+            Find and book tickets to the best events near you
+          </Text>
+        </VStack>
 
-      <SimpleGrid columns={{ sm: 1, md: 2, lg: 3 }} spacing={10} py={5}>
-        {filteredEvents.map(event => (
-          <EventCard
-            key={event.event_id}
-            id={event.event_id}
-            eventName={event.event_name}
-            startDatetime={event.start_datetime}
-            venueName={event.venue_name}
-            city={event.city}
-            imageUrl={event.image_url}
-            status={event.status}
+        {/* Search and Date Filter Section */}
+        <VStack spacing={4} w="full" maxW="lg" mb={8}>
+          <HStack w="full" spacing={3}>
+            <InputGroup size="lg" flex={1}>
+              <InputLeftElement pointerEvents="none">
+                <SearchIcon color="gray.400" />
+              </InputLeftElement>
+              <Input
+                placeholder="Search events by name or location..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                bg="white"
+                borderRadius="xl"
+                border="2px solid"
+                borderColor="gray.200"
+                boxShadow="sm"
+                _hover={{ borderColor: 'gray.300' }}
+                _focus={{ 
+                  borderColor: 'blue.500', 
+                  boxShadow: '0 0 0 1px #3182ce',
+                  bg: 'white',
+                }}
+                transition="all 0.2s ease"
+              />
+            </InputGroup>
+            <Button
+              bgGradient={gradients.primaryButton}
+              color="white"
+              size="lg"
+              borderRadius="xl"
+              boxShadow="md"
+              fontWeight="semibold"
+              px={6}
+              leftIcon={<CalendarIcon />}
+              _hover={{
+                bgGradient: gradients.primaryButtonHover,
+                transform: 'translateY(-2px)',
+                boxShadow: 'lg',
+              }}
+              _active={{
+                transform: 'translateY(0)',
+                boxShadow: 'sm',
+              }}
+              transition="all 0.2s ease"
+              onClick={() => setShowDatePicker(!showDatePicker)}
+            >
+              {hasDateFilter ? 'Filtered' : 'Date'}
+            </Button>
+          </HStack>
+          {showDatePicker && (
+            <DateGrid startDate={startDate} endDate={endDate} onSelectRange={handleSelectRange} />
+          )}
+        </VStack>
+
+        {/* Loading State */}
+        {loading && (
+          <Center py={20}>
+            <VStack spacing={4}>
+              <Spinner size="xl" color="blue.500" thickness="3px" />
+              <Text color="gray.500">Loading events...</Text>
+            </VStack>
+          </Center>
+        )}
+
+        {/* Empty State */}
+        {!loading && filteredEvents.length === 0 && (
+          <EmptyState
+            icon="🎭"
+            title="No events found"
+            description={searchQuery || hasDateFilter 
+              ? "Try adjusting your search or filters"
+              : "Check back soon for upcoming events"}
+            action={
+              (searchQuery || hasDateFilter) && (
+                <Button
+                  variant="outline"
+                  colorScheme="blue"
+                  borderRadius="xl"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setStartDate('');
+                    setEndDate('');
+                  }}
+                >
+                  Clear filters
+                </Button>
+              )
+            }
           />
-        ))}
-      </SimpleGrid>
-    </Container>
-    </Box>
+        )}
+
+        {/* Event Grid */}
+        {!loading && filteredEvents.length > 0 && (
+          <SimpleGrid 
+            columns={{ base: 1, md: 2, lg: 3 }} 
+            spacing={{ base: 6, md: 8 }} 
+            w="full"
+            pb={8}
+          >
+            {filteredEvents.map(event => (
+              <EventCard
+                key={event.event_id}
+                id={event.event_id}
+                eventName={event.event_name}
+                startDatetime={event.start_datetime}
+                venueName={event.venue_name}
+                city={event.city}
+                imageUrl={event.image_url}
+                status={event.status}
+              />
+            ))}
+          </SimpleGrid>
+        )}
+      </PageContainer>
+    </PageWrapper>
   );
 }
 

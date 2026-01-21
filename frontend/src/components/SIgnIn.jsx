@@ -30,6 +30,8 @@ import {
 } from '@chakra-ui/react';
 import { EmailIcon, LockIcon, ViewIcon, ViewOffIcon } from '@chakra-ui/icons';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { gradients } from '../theme';
+import { PageWrapper, GlassCard, PrimaryButton, DividerWithText } from './ui';
 
 function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
@@ -133,9 +135,9 @@ function SignIn() {
 
   return (
     <>
-      <Box
-        minH="calc(100vh - 72px)"
-        bg="linear-gradient(135deg, #667eea 0%, #000000 100%)"
+      <PageWrapper 
+        bg={gradients.authBackground} 
+        minH="calc(100vh - 64px)"
         display="flex"
         alignItems="center"
         justifyContent="center"
@@ -143,13 +145,7 @@ function SignIn() {
         px={4}
       >
         <Container maxW="md">
-          <Box
-            bg="white"
-            borderRadius="2xl"
-            boxShadow="2xl"
-            p={{ base: 8, md: 10 }}
-            w="full"
-          >
+          <GlassCard padding={{ base: 8, md: 10 }} hover={false}>
             <VStack spacing={6} as="form" onSubmit={handleSubmit}>
               {/* Header */}
               <VStack spacing={2} textAlign="center" w="full">
@@ -266,36 +262,17 @@ function SignIn() {
             </HStack>
 
             {/* Sign In Button */}
-            <Button
+            <PrimaryButton
               type="submit"
               w="full"
-              size="lg"
-              bg="blue.500"
-              color="white"
-              borderRadius="xl"
-              fontWeight="bold"
-              fontSize="md"
               isLoading={isLoading}
               loadingText="Signing in..."
-              _hover={{
-                bg: 'blue.600',
-                transform: 'translateY(-2px)',
-                boxShadow: 'lg',
-              }}
-              _active={{ bg: 'blue.700', transform: 'translateY(0)' }}
-              transition="all 0.2s"
             >
               Sign In
-            </Button>
+            </PrimaryButton>
 
             {/* Divider */}
-            <HStack w="full" spacing={4}>
-              <Divider borderColor="gray.300" />
-              <Text color="gray.400" fontSize="sm" whiteSpace="nowrap">
-                or continue with
-              </Text>
-              <Divider borderColor="gray.300" />
-            </HStack>
+            <DividerWithText>or continue with</DividerWithText>
 
             {/* Social Login Buttons */}
             <HStack w="full" spacing={4}>
@@ -370,9 +347,9 @@ function SignIn() {
               </Link>
             </Text>
           </VStack>
-        </Box>
+        </GlassCard>
       </Container>
-    </Box>
+    </PageWrapper>
 
     {/* Forgot Password Modal */}
     <Modal isOpen={isOpen} onClose={handleForgotModalClose} isCentered>

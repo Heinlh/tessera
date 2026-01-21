@@ -19,9 +19,11 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
+  Icon,
 } from '@chakra-ui/react';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { gradients } from '../theme';
 
 function Navbar() {
   const location = useLocation();
@@ -69,24 +71,25 @@ function Navbar() {
   return (
     <>
       <Flex
-        bg="linear-gradient(135deg, #3182ce 0%, #2c5282 100%)"
+        bg={gradients.navBar}
         color="white"
-        px={6}
+        px={{ base: 4, md: 6 }}
         py={3}
         alignItems="center"
-        boxShadow="0 4px 12px rgba(0, 0, 0, 0.15)"
+        boxShadow="nav"
         position="sticky"
         top={0}
         zIndex={100}
+        h="64px"
       >
         {/* Logo Box */}
         <Box
           as="button"
           onClick={handleLogoClick}
           bg="white"
-          px={5}
+          px={{ base: 4, md: 5 }}
           py={2}
-          borderRadius="lg"
+          borderRadius="xl"
           boxShadow="md"
           transition="all 0.2s ease"
           _hover={{
@@ -98,9 +101,14 @@ function Navbar() {
             transform: 'translateY(0)',
             boxShadow: 'sm',
           }}
+          _focusVisible={{
+            outline: '2px solid',
+            outlineColor: 'white',
+            outlineOffset: '2px',
+          }}
         >
           <Text
-            fontSize="xl"
+            fontSize={{ base: 'lg', md: 'xl' }}
             fontWeight="extrabold"
             bgGradient="linear(to-r, blue.500, blue.700)"
             bgClip="text"
