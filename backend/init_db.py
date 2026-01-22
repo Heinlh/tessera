@@ -5,11 +5,14 @@ Creates all tables and seeds with sample data for demo purposes.
 import sqlite3
 import os
 
-# Use environment variable or default path
-DB_PATH = os.environ.get('DATABASE_PATH', 'tessera.db')
+# Use environment variable or default path (must match app.py)
+DB_PATH = os.environ.get('DATABASE_PATH', 'data/tessera.db')
 
 def init_database():
     """Initialize the database with schema and sample data."""
+    # Create data directory if it doesn't exist
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 

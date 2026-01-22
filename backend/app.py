@@ -52,8 +52,8 @@ jwt = JWTManager(app)
 # =============================================================================
 # DATABASE HELPERS
 # =============================================================================
-# Database path - use environment variable or default to local path
-DB_PATH = os.environ.get('DATABASE_PATH', '../database/tessera.db')
+# Database path - use environment variable or default to data folder
+DB_PATH = os.environ.get('DATABASE_PATH', 'data/tessera.db')
 
 def get_db_connection():
     """Return a SQLite connection object configured to return rows as dict-like objects."""
