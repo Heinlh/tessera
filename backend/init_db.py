@@ -11,7 +11,9 @@ DB_PATH = os.environ.get('DATABASE_PATH', 'data/tessera.db')
 def init_database():
     """Initialize the database with schema and sample data."""
     # Create data directory if it doesn't exist
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    db_dir = os.path.dirname(DB_PATH)
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
     
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
