@@ -1,5 +1,7 @@
 # Tessera
 
+> 🎫 **Live Demo:** [tessera-frontend.onrender.com](https://tessera-frontend.onrender.com) *(Note: First load may take ~30 seconds if server is sleeping)*
+
 ## Overview
 
 Tessera is a full-stack event ticketing platform that enables users to browse events, select seats from an interactive seat map, and complete purchases via Stripe. It provides a complete ticketing workflow including seat reservations with time-limited holds, shopping cart management, and digital ticket generation with barcodes.
@@ -166,6 +168,49 @@ For testing Stripe payments, use:
 - **Expiry:** Any future date
 - **CVC:** Any 3 digits
 
+## Deployment
+
+### Deployed on Render (Free Tier)
+
+The application is deployed using Render's free tier:
+- **Frontend:** Static Site
+- **Backend:** Web Service
+
+### Deploy Your Own
+
+#### Backend (Render Web Service)
+
+1. Create a new **Web Service** on [Render](https://render.com)
+2. Connect your GitHub repository
+3. Configure:
+   - **Root Directory:** `backend`
+   - **Build Command:** `./build.sh`
+   - **Start Command:** `gunicorn app:app`
+4. Add environment variables:
+   - `STRIPE_SECRET_KEY` - Your Stripe secret key (starts with `sk_test_`)
+   - `JWT_SECRET_KEY` - A secure random string
+   - `DATABASE_PATH` - `data/tessera.db`
+
+#### Frontend (Render Static Site)
+
+1. Create a new **Static Site** on Render
+2. Connect your GitHub repository
+3. Configure:
+   - **Root Directory:** `frontend`
+   - **Build Command:** `npm install && npm run build`
+   - **Publish Directory:** `dist`
+4. Add environment variable:
+   - `VITE_API_URL` - Your backend URL (e.g., `https://your-backend.onrender.com`)
+5. **Important:** Add a rewrite rule for SPA routing:
+   - Go to **Redirects/Rewrites** tab
+   - Add rule: Source `/*` → Destination `/index.html` → Action `Rewrite`
+
+### Free Tier Limitations
+
+- Server spins down after 15 minutes of inactivity
+- First request after sleep takes ~30 seconds
+- SQLite data resets on redeploy (use for demo only)
+
 ## API Reference
 
 ### Authentication Endpoints
@@ -305,10 +350,8 @@ The backend follows a single-file architecture with clear section headers:
 - **No email verification** for user registration
 - **No password reset** functionality
 - **SQLite** is used - not suitable for high-concurrency production use
-- **Hardcoded frontend Stripe key** - should be moved to environment configuration
 - **No comprehensive test suite**
-- **JWT secret** has a fallback default value - should be required in production
 
 ## License
 
-License not specified.
+MIT License
