@@ -248,17 +248,17 @@ def seed_data(cursor):
     for event_id in range(1001, 1011):
         cursor.execute(
             "INSERT INTO PriceTiers (price_tier_id, event_id, tier_code, tier_name, price_cents) VALUES (?, ?, 'VIP', 'VIP Seating', 15000)",
-            (price_tier_id,)
+            (price_tier_id, event_id)
         )
         price_tier_id += 1
         cursor.execute(
             "INSERT INTO PriceTiers (price_tier_id, event_id, tier_code, tier_name, price_cents) VALUES (?, ?, 'PREMIUM', 'Premium Seating', 10000)",
-            (price_tier_id,)
+            (price_tier_id, event_id)
         )
         price_tier_id += 1
         cursor.execute(
             "INSERT INTO PriceTiers (price_tier_id, event_id, tier_code, tier_name, price_cents) VALUES (?, ?, 'STANDARD', 'Standard Seating', 5000)",
-            (price_tier_id,)
+            (price_tier_id, event_id)
         )
         price_tier_id += 1
 
