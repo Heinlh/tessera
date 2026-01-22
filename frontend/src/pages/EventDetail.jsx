@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { API_URL } from '../config';
 import {
   Box,
   Container,
@@ -56,7 +57,7 @@ function EventDetail() {
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/events/${id}`);
+        const response = await fetch(`${API_URL}/events/${id}`);
         if (!response.ok) {
           throw new Error('Event not found');
         }
@@ -69,7 +70,7 @@ function EventDetail() {
 
     const fetchSeats = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/events/${id}/seats`);
+        const response = await fetch(`${API_URL}/events/${id}/seats`);
         if (response.ok) {
           const data = await response.json();
           setSeatsData(data.seats || []);
@@ -246,7 +247,7 @@ function EventDetail() {
       const refreshToken = localStorage.getItem('refresh_token');
       if (refreshToken) {
         try {
-          const refreshResponse = await fetch('http://localhost:5000/refresh', {
+          const refreshResponse = await fetch(`${API_URL}/refresh`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${refreshToken}`,
@@ -285,7 +286,7 @@ function EventDetail() {
     setReservingSeats(true);
 
     try {
-      const response = await authenticatedFetch(`http://localhost:5000/events/${id}/reserve`, {
+      const response = await authenticatedFetch(`${API_URL}/events/${id}/reserve`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -344,7 +345,7 @@ function EventDetail() {
   // Remove seat from cart
   const handleRemoveSeat = async (seat) => {
     try {
-      await authenticatedFetch(`http://localhost:5000/events/${id}/release`, {
+      await authenticatedFetch(`${API_URL}/events/${id}/release`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

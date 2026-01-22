@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_URL } from '../config';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import {
@@ -36,9 +37,10 @@ import {
   IconButton,
 } from '@chakra-ui/react';
 import { DeleteIcon, CheckCircleIcon, LockIcon, ArrowBackIcon } from '@chakra-ui/icons';
+import { STRIPE_PUBLISHABLE_KEY } from '../config';
 
 // Initialize Stripe with your publishable key
-const stripePromise = loadStripe('pk_test_51SqGSvIiRRE19iQweWKvcSjCRuDhWc5ne2hOjSolKijoFGmZtuTDDSDnAhyRCi4iFSAfvM6FNUxkCtuTLC8iKySi006GBzo4og');
+const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 
 // Stripe CardElement styling
 const cardElementOptions = {
@@ -85,7 +87,7 @@ function PaymentForm({ cartData, onSuccess, onCancel }) {
       const token = localStorage.getItem('access_token');
 
       // Step 1: Create payment intent on our backend
-      const intentResponse = await fetch('http://localhost:5000/create-payment-intent', {
+      const intentResponse = await fetch(`${API_URL}/create-payment-intent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -122,7 +124,7 @@ function PaymentForm({ cartData, onSuccess, onCancel }) {
       }
 
       // Step 3: Complete purchase on our backend
-      const purchaseResponse = await fetch('http://localhost:5000/complete-purchase', {
+      const purchaseResponse = await fetch(`${API_URL}/complete-purchase`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -268,7 +270,7 @@ function Checkout() {
   const fetchCarts = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch('http://localhost:5000/cart', {
+      const response = await fetch(`${API_URL}/cart`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -293,7 +295,7 @@ function Checkout() {
 
     try {
       const token = localStorage.getItem('access_token');
-      await fetch(`http://localhost:5000/events/${cart.event_id}/release`, {
+      await fetch(`${API_URL}/events/${cart.event_id}/release`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

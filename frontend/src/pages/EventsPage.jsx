@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { API_URL } from '../config';
 import {
   SimpleGrid,
   Container,
@@ -181,7 +182,7 @@ function EventsPage() {
     // Get today's date in YYYY-MM-DD format to filter only future events
     const today = new Date().toISOString().split('T')[0];
     setLoading(true);
-    fetch(`http://localhost:5000/events?afterDate=${today}`)
+    fetch(`${API_URL}/events?afterDate=${today}`)
       .then(response => response.json())
       .then(data => {
         setEvents(data);

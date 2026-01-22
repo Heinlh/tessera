@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_URL } from '../config';
 import {
   Box,
   Button,
@@ -64,7 +65,7 @@ function Register() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/user', {
+      const response = await fetch(`${API_URL}/user`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

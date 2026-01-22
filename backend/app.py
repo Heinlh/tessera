@@ -52,9 +52,12 @@ jwt = JWTManager(app)
 # =============================================================================
 # DATABASE HELPERS
 # =============================================================================
+# Database path - use environment variable or default to local path
+DB_PATH = os.environ.get('DATABASE_PATH', '../database/tessera.db')
+
 def get_db_connection():
     """Return a SQLite connection object configured to return rows as dict-like objects."""
-    conn = sqlite3.connect('../database/tessera.db')
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -1617,4 +1620,6 @@ def void_ticket(ticket_id):
 # APPLICATION ENTRY POINT
 # =============================================================================
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+    app.run(host='0.0.0.0', port=port, debug=debug)
