@@ -20,7 +20,7 @@ Tessera is a full-stack event ticketing platform that enables users to browse ev
 
 ### Backend
 - **Language:** Python 3
-- **Framework:** Flask
+ - **Framework:** Flask
 - **Authentication:** Flask-JWT-Extended (JWT with access/refresh tokens)
 - **Database:** SQLite
 - **Payment Processing:** Stripe API
@@ -87,26 +87,26 @@ tessera/
 ### Backend Setup
 
 ```bash
-# Navigate to project root
-cd tessera
+# Navigate to backend directory
+cd tessera/backend
 
 # Create and activate virtual environment
-python3 -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install Python dependencies
-pip install flask flask-cors flask-jwt-extended stripe python-dotenv
+pip install -r requirements.txt
 
 # Configure environment variables
-cp backend/.env.example backend/.env
-# Edit backend/.env with your actual values
+cp .env.example .env
+# Edit .env with your actual Stripe secret key (starts with sk_test_)
 ```
 
 ### Frontend Setup
 
 ```bash
 # Navigate to frontend directory
-cd frontend
+cd tessera/frontend
 
 # Install dependencies
 npm install
@@ -117,14 +117,19 @@ npm install
 Create `backend/.env` with the following variables:
 
 ```env
-# Stripe API Keys (get from https://dashboard.stripe.com/apikeys)
+# Stripe API Keys (get from https://dashboard.stripe.com/test/apikeys)
 STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key_here
 
 # JWT Configuration
 JWT_SECRET_KEY=your-super-secret-jwt-key-change-in-production
+
+# Database path (optional - defaults to ../database/tessera.db)
+# DATABASE_PATH=../database/tessera.db
 ```
 
-**Important:** The Stripe publishable key (`pk_test_...`) is configured in `frontend/src/pages/Checkout.jsx`. Update it to match your Stripe account.
+**Important:** 
+- The Stripe **secret key** must start with `sk_test_` (not `pk_test_` or `spk_test_`)
+- The Stripe **publishable key** (`pk_test_...`) is configured in `frontend/src/config.js`
 
 ## Running the Project
 
@@ -132,7 +137,7 @@ JWT_SECRET_KEY=your-super-secret-jwt-key-change-in-production
 
 ```bash
 cd backend
-source ../.venv/bin/activate  # If not already activated
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 python app.py
 ```
 
@@ -145,7 +150,7 @@ cd frontend
 npm run dev
 ```
 
-The frontend runs on `http://localhost:5173` (Vite default) or `http://localhost:5174`.
+The frontend runs on `http://localhost:5173` (Vite default).
 
 ### Default Ports
 
@@ -153,6 +158,13 @@ The frontend runs on `http://localhost:5173` (Vite default) or `http://localhost
 |----------|------|
 | Backend  | 5000 |
 | Frontend | 5173 |
+
+### Test Credentials
+
+For testing Stripe payments, use:
+- **Card:** `4242 4242 4242 4242`
+- **Expiry:** Any future date
+- **CVC:** Any 3 digits
 
 ## API Reference
 

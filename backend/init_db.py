@@ -6,7 +6,8 @@ import sqlite3
 import os
 
 # Use environment variable or default path (must match app.py)
-DB_PATH = os.environ.get('DATABASE_PATH', 'data/tessera.db')
+# Local dev: ../database/tessera.db | Production (Render): set DATABASE_PATH=data/tessera.db
+DB_PATH = os.environ.get('DATABASE_PATH', '../database/tessera.db')
 
 def init_database():
     """Initialize the database with schema and sample data."""
