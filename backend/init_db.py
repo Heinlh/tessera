@@ -188,6 +188,20 @@ def init_database():
         ON DELETE RESTRICT,
       UNIQUE (order_id, seat_id)
     );
+
+    CREATE TABLE IF NOT EXISTS Tickets (
+      ticket_id      INTEGER PRIMARY KEY,
+      order_item_id  INTEGER NOT NULL,
+      barcode_num    TEXT NOT NULL UNIQUE,
+      status         TEXT NOT NULL CHECK (status IN ('ISSUED','SCANNED','VOIDED')),
+      issued_at      TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (order_item_id) REFERENCES OrderItems(order_item_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_tickets_order_item
+      ON Tickets(order_item_id);
     """)
 
     # Check if we need to seed data
